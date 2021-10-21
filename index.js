@@ -1,9 +1,10 @@
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcrypt')
 const app = express();
 const {MongoClient, ObjectId} = require('mongodb')
-const client = new MongoClient("mongodb://localhost:27017")
+const client = new MongoClient("mongodb+srv://raihan:iKeEZyWrdCzvu8UY@cluster0.dyuhm.mongodb.net/discussion_forum?retryWrites=true&w=majority")
 const db = client.db('discussion_forum')
 
 app.use(express.json())
@@ -15,7 +16,7 @@ const connect = async () => {
         app.listen(5000, function(){
             console.log('app is running')
         })
-        app.get('/api/home', async (req, res) => {
+        app.get('/api/discussions', async (req, res) => {
             let posts = await db.collection('posts').find({}).toArray()
             posts = posts.map(async post => {
                             const answer = await db.collection('answers').find({post_id: post._id}).count()
@@ -42,31 +43,40 @@ const connect = async () => {
             res.json({result: data})
         })
         app.post('/api/login', async (req, res) => {
+            const { email, password} = req.body
             const maxAge = 3 * 24 * 60 * 60
             try {
                 const data = await db.collection('users').findOne({email: req.body.email})
-                const token = jwt.sign({email: req.body.email}, 'discussion forum credentials', {
-                    expiresIn: maxAge
-                } )
-                if(data.password == req.body.password){
-                    res.cookie('token', token, {httpOnly: true, maxAge: maxAge * 1000 })
-                    res.json({result: data, token})
+                if(data){
+                    const auth = await bcrypt.compare(password, data.password)
+                    if(auth){
+                        const token = jwt.sign({email: req.body.email}, 'discussion forum credentials', {
+                            expiresIn: maxAge
+                        } )
+                        res.cookie('token', token, {httpOnly: true, maxAge: maxAge * 1000 })
+                        res.json({result: data})
+                    }
+                    else{
+                        throw 'Wrong password'
+                    }
                 }
                 else{
-                    throw 'Wrong password'
+                    throw 'No user found'
                 }
-
             } catch (error) {
                 res.json({error: error})
             }
 
         })
         app.post('/api/signup', async (req, res) => {
+            const {email, fullname, password} = req.body
             try {
-                const data = await db.collection('users').insertOne(req.body)
-                /api//api/ console.log(req.body)
+                const salt = await bcrypt.genSalt()
+                const hashed = await bcrypt.hash(password, salt)
+                const data = await db.collection('users').insertOne({email, fullname, password: hashed})
                 res.json({result: data})
             } catch (error) {
+                console.log(error)
                 res.json({error: error})
             }
 
@@ -118,7 +128,6 @@ const connect = async () => {
             res.cookie('token', '', { maxAge: 1})
             res.json({result: 'logged out'})
         })
-        // await updateData()
     }
     catch(err){
         console.log(err)
@@ -128,18 +137,3 @@ const connect = async () => {
     }
 }
 connect()
-
-
-
-// const getPost = async () => {
-//     const select = await db.collection('post').find({}).toArray()
-//     return select
-// }
-// const showPost = async (id) => {
-//     const select = await db.collection('post').findOne({_id: ObjectId(id)})
-//     return select
-// }
-// const updateData = async () => {
-//     const select = await db.collection('post').updateOne({_id: ObjectId("615673dff844f07e191abaae")}, {$set: {user_id: 1}})
-//     return select
-// }
