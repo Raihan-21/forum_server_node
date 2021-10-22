@@ -13,7 +13,7 @@ app.use(cookieParser())
 const connect = async () => {
     try{
         await client.connect()
-        app.listen(5000, function(){
+        app.listen(process.env.PORT || 5000, function(){
             console.log('app is running')
         })
         app.get('/api/discussions', async (req, res) => {
