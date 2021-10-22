@@ -99,7 +99,11 @@ const connect = async () => {
         app.post('/api/answer', async (req, res) => {
             const {user_email, content, post_id} = req.body
             try {
-                const data = await db.collection('answers').insertOne({user_email, post_id: ObjectId(post_id), content, like: 0})
+                const add = await db.collection('answers').insertOne({user_email, post_id: ObjectId(post_id), content, like: 0})
+                let data = await db.collection('answers').findOne({_id: add.insertedId})
+                const user = await db.collection('users').findOne({email: user_email})
+                data.user_fullname = user.fullname
+                console.log(data)
                 res.json({result: data})
             } catch (error) {
                 res.json({error: error})
