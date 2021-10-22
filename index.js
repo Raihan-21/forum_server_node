@@ -2,6 +2,7 @@ const express = require('express')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt')
+const cors = require('cors')
 const app = express();
 const {MongoClient, ObjectId} = require('mongodb')
 const client = new MongoClient("mongodb+srv://raihan:iKeEZyWrdCzvu8UY@cluster0.dyuhm.mongodb.net/discussion_forum?retryWrites=true&w=majority")
@@ -10,6 +11,7 @@ const db = client.db('discussion_forum')
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
+app.use(cors({origin: "https://stuck-forum.netlify.app"}))
 const connect = async () => {
     try{
         await client.connect()
