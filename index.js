@@ -35,6 +35,7 @@ const connect = async () => {
         return post;
       });
       const data = await Promise.all(posts);
+      console.log("helo");
       res.json({ result: data });
     });
     app.get("/api/categories", async (req, res) => {
